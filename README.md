@@ -13,9 +13,9 @@ Requires [.NET 6.0](https://dotnet.microsoft.com/en-us/download/dotnet/6.0).
 
 ## Future Plans
 - This is a very rudementary start, so the UI is essentially placeholder. I am not a great designer so if someone wants to contribute, feel free and I will include you in the credits.
-- If I can figure out the details, I will try to incorporate the volume saver into the launcher itself so you don't have to download another program.
+- I will try to incorporate the volume saver into the launcher itself so you don't have to download another program.
 
 ## Credits
 Craft_Mesa - NMC Icon<br>
-Zashiko - Suggestion to focus PCSX2 when launching both programs<br>
+Zashiko - Suggestion to focus PCSX2 when launching both programs, as well as starting with --nogui<br>
 [KHUX Wiki](https://www.khuxwiki.com/wiki/File:Roxas_Art_(EX)_6%E2%98%85_KHUX.png) - Roxas image<br>
