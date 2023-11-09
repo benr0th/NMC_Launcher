@@ -17,5 +17,5 @@ Requires [.NET 6.0](https://dotnet.microsoft.com/en-us/download/dotnet/6.0).
 
 ## Credits
 Craft_Mesa - NMC Icon<br>
-Zashiko - Suggestion to focus PCSX2 when launching both programs<br>
+Zashiko - Suggestion to focus PCSX2 when launching both programs, as well as starting with --nogui<br>
 [KHUX Wiki](https://www.khuxwiki.com/wiki/File:Roxas_Art_(EX)_6%E2%98%85_KHUX.png) - Roxas image<br>
