@@ -1,0 +1,17 @@
+﻿<Window x:Class="NMC_Launcher.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:NMC_Launcher"
+        mc:Ignorable="d"
+        WindowStartupLocation="CenterScreen"
+        ContentRendered="Window_ContentRendered"
+        Title="NMC Launcher" Height="500" Width="800">
+    <Grid>
+        <Image Stretch="Uniform" Source="Images/Roxas_Art_KHUX.png" HorizontalAlignment="Center" Margin="0,-17,0,83" Width="288"></Image>
+        <Button Name="PlayButton" Content="Play" Click="PlayButton_Click" Margin="314,375,314,33" FontSize="25"></Button>
+        <CheckBox IsChecked="True" Margin="46,327,-46,109" Content="Fullscreen" FontSize="18" VerticalContentAlignment="Center" Checked="CheckBoxFS_Checked" Unchecked="CheckBoxFS_Unchecked" ToolTip="Starts game in full screen"></CheckBox>
+        <CheckBox IsChecked="True" Margin="46,361,-46,71" Content="Game Window Only" FontSize="18" VerticalContentAlignment="Center" Checked="CheckBoxGW_Checked" Unchecked="CheckBoxGW_Unchecked" ToolTip="Launches PCSX2 without the config window"></CheckBox>
+    </Grid>
+</Window>
