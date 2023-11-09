@@ -144,12 +144,9 @@ namespace NMC_Launcher
                     {
                         MessageBox.Show(ex.Message);
                     }
-                    finally
-                    {
-                        webClient.Dispose();
-                        MessageBox.Show("Volume Saver downloaded. Press Play to start the game.", "Volume Saver Downloaded");
-                        hasVolumeSaver = true;
-                    }
+                    webClient.Dispose();
+                    MessageBox.Show("Volume Saver downloaded. Press Play to start the game.", "Volume Saver Downloaded");
+                    hasVolumeSaver = true;
                 }
                 else if (result == MessageBoxResult.No)
                 {
