@@ -1,5 +1,6 @@
 # NMC_Launcher
-A basic launcher for the KH2 mod Nobody May Cry. Put the .exe in the **Music Tool** folder and launch it. It will not work anywhere else (currently at least).
+A basic launcher for the KH2 mod Nobody May Cry. Put the .exe in the **Music Tool** folder and launch it. It will not work anywhere else (currently at least).<br>
+Requires [.NET 6.0](https://dotnet.microsoft.com/en-us/download/dotnet/6.0).
 
 ## Features
 - Launches Music_GUI and PCSX2 together.
