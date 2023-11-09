@@ -43,7 +43,9 @@ namespace NMC_Launcher
 
         bool fullscreen = false;
         bool gameWindowOnly = false;
-        bool hasVolumeSaver = false;
+        int volume;
+        int new_volume;
+        bool Found = false;
 
         public MainWindow()
         {
@@ -82,32 +84,15 @@ namespace NMC_Launcher
 
             // Music Launch Settings
             Process music = new();
-            if (hasVolumeSaver)
+            music.StartInfo.FileName = ".\\Music_GUI.exe";
+            try
             {
-                music.StartInfo.FileName = ".\\music_gui_volume.exe";
-                try
-                {
-                    music.Start();
-                }
-                catch
-                {
-                    MessageBox.Show("Music GUI Volume Saver not found. Please make sure the launcher is located in the Music Tool folder.", "Music GUI Volume Saver Not Found");
-                }
+                music.Start();
             }
-            else
+            catch
             {
-                music.StartInfo.FileName = ".\\Music_GUI.exe";
-                try
-                {
-                    music.Start();
-                }
-                catch
-                {
-                    MessageBox.Show("Music GUI not found. Please make sure the launcher is located in the Music Tool folder.", "Music GUI Not Found");
-                }
+                MessageBox.Show("Music GUI not found. Please make sure the launcher is located in the Music Tool folder.", "Music GUI Not Found");
             }
-
-            //Volume_Saver();
 
             // Puts PCSX2 in foreground after Music_GUI launches
             while (true)
@@ -121,40 +106,21 @@ namespace NMC_Launcher
                 }
             }
 
-            // Closes launcher
-            Environment.Exit(0);
+            // Start volume saver
+            Thread volumeSaver = new(Volume_Saver);
+            volumeSaver.Start();
 
+            // Puts the launcher in the background to keep volume saver running
+            Hide();
+
+            // Closes launcher when Music_GUI closes to assure volume was saved
+            music.WaitForExit();
+            Environment.Exit(0);
         }
 
         private void Window_ContentRendered(object sender, EventArgs e)
         {
-            if (!File.Exists(".\\music_gui_volume.exe"))
-            {
-                hasVolumeSaver = false;
-                MessageBoxResult result = MessageBox.Show("Volume Saver not found. Download Volume Saver?\n\nNote: Without it, you will need to adjust the volume each time Music_GUI.exe launches if you changed the volume level.", "Music GUI Volume Saver Not Found", MessageBoxButton.YesNo);
 
-                if (result == MessageBoxResult.Yes)
-                {
-                    WebClient webClient = new();
-                    try
-                    {
-                        webClient.DownloadFile("https://github.com/benr0th/Music-GUI-Volume-Saver/releases/download/latest/music_gui_volume.exe", "music_gui_volume.exe");
-                    }
-                    catch (Exception ex)
-                    {
-                        MessageBox.Show(ex.Message);
-                    }
-                    webClient.Dispose();
-                    MessageBox.Show("Volume Saver downloaded. Press Play to start the game.", "Volume Saver Downloaded");
-                    hasVolumeSaver = true;
-                }
-                else if (result == MessageBoxResult.No)
-                {
-                    hasVolumeSaver = false;
-                }
-            }
-            else
-                hasVolumeSaver = true;
         }
 
         private void CheckBoxFS_Checked(object sender, RoutedEventArgs e)
@@ -179,29 +145,54 @@ namespace NMC_Launcher
 
         private void Volume_Saver()
         {
-            var Found = false;
-
             while (!Found)
             {
                 Thread.Sleep(250);
-                Found = Memory.Attatch("Music_GUI");
+                Found = Memory.Attach("Music_GUI");
             }
-
 
             Process[] processes = Process.GetProcessesByName("Music_GUI");
             int BaseAddress = processes[0].MainModule.BaseAddress.ToInt32();
-            int volume = Memory.ReadMemory<int>(BaseAddress + 0x251010);
-            MessageBox.Show(volume.ToString());
-
 
             // Get volume
-            //int volume = Memory.ReadMemory<int>(BaseAddress + 0x251010);
+            try
+            {
+                volume = int.Parse(File.ReadAllText("volume.ini"));
+            }
+            catch
+            {
+                // File doesn't exist yet, so get volume from memory
+                volume = Memory.ReadMemory<int>(BaseAddress + 0x251010);
+            }
+            
             // Save volume
-            //Properties.Settings.Default.Volume = volume;
-            //Properties.Settings.Default.Save();
+            Memory.WriteMemory<int>(BaseAddress + 0x251010, volume);
+            File.WriteAllText("volume.ini", volume.ToString());
+
+            // If volume changed, save new volume
+            bool volumeChanged = false;
+            DateTime lastVolumeChange = DateTime.Now;
+            while (true)
+            {
+                Thread.Sleep(100);
+                new_volume = Memory.ReadMemory<int>(BaseAddress + 0x251010);
+   
+                if (new_volume != volume)
+                {
+                    volume = new_volume;
+                    File.WriteAllText("volume.ini", volume.ToString());
+                    volumeChanged = true;
+                    lastVolumeChange = DateTime.Now;
+                }
+                else if (volumeChanged && (DateTime.Now - lastVolumeChange).TotalSeconds > 30)
+                {
+                    volumeChanged = false;
+                    Thread.Sleep(1000); // wait for 1 second before checking again
+                }
+            }
         }
 
-        // This is for future internal volume saver use
+        // Credit to PuffingIn2D and C0reTheAlpaca for the Memory class
         internal class Memory
         {
             private static Process? m_iProcess;
@@ -210,7 +201,7 @@ namespace NMC_Launcher
             private static int m_iBytesWritten;
             private static int m_iBytesRead;
 
-            public static bool Attatch(string ProcName)
+            public static bool Attach(string ProcName)
             {
                 if (Process.GetProcessesByName(ProcName).Length > 0)
                 {
