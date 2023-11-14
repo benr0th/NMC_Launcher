@@ -46,6 +46,7 @@ namespace NMC_Launcher
         int volume;
         int new_volume;
         bool Found = false;
+        string version;
 
         public MainWindow()
         {
@@ -57,7 +58,21 @@ namespace NMC_Launcher
             // PCSX2 Launch Settings
             Process ps2 = new();
 
-            ps2.StartInfo.FileName = "..\\pcsx2-v1.7.2746-windows-x86\\pcsx2x64.exe";
+            if (File.Exists("..\\pcsx2-v1.7.2746-windows-x86\\pcsx2x64.exe"))
+            {
+                version = "Rev 5";
+                ps2.StartInfo.FileName = "..\\pcsx2-v1.7.2746-windows-x86\\pcsx2x64.exe";
+            }
+            else if (File.Exists("..\\PCSX2 NMC Executable\\pcsx2x64.exe"))
+            {
+                version = "Rev 6+";
+                ps2.StartInfo.FileName = "..\\PCSX2 NMC Executable\\pcsx2x64.exe";
+            }
+            else
+            {
+                MessageBox.Show("PCSX2 not found. Please make sure the launcher is located in the Music Tool folder.", "PCSX2 Not Found");
+            }
+
             ps2.StartInfo.Arguments = "\"..\\Patcher\\KH2FM.NEW.ISO\"";
 
             if (!File.Exists("..\\Patcher\\KH2FM.NEW.ISO"))
