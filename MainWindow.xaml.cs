@@ -190,6 +190,11 @@ namespace NMC_Launcher
             while (true)
             {
                 Thread.Sleep(100);
+
+                // Exit loop if Music_GUI is closed, so memory does not read from invalid address
+                if (Process.GetProcessesByName("Music_GUI").Length == 0)
+                    break;
+
                 new_volume = Memory.ReadMemory<int>(BaseAddress + 0x251010);
    
                 if (new_volume != volume)
