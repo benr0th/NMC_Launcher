@@ -8,15 +8,16 @@
         mc:Ignorable="d"
         WindowStartupLocation="CenterScreen"
         ContentRendered="Window_ContentRendered"
+        ResizeMode="NoResize"
         Title="NMC Launcher" Height="500" Width="800">
     <Grid>
         <Image Stretch="Uniform" Source="Images/Roxas_Art_KHUX.png" HorizontalAlignment="Center" Margin="0,-17,0,83" Width="288"></Image>
         <Button Name="PlayButton" Content="Play" Click="PlayButton_Click" Margin="314,375,314,33" FontSize="25"></Button>
-        <CheckBox IsChecked="True" Margin="46,327,638,109" Content="Fullscreen" FontSize="18" VerticalContentAlignment="Center" Checked="CheckBoxFS_Checked" Unchecked="CheckBoxFS_Unchecked" ToolTip="Starts game in full screen"></CheckBox>
-        <CheckBox IsChecked="True" Margin="46,361,549,71" Content="Game Window Only" FontSize="18" VerticalContentAlignment="Center" Checked="CheckBoxGW_Checked" Unchecked="CheckBoxGW_Unchecked" ToolTip="Launches PCSX2 without the config window"></CheckBox>
+        <CheckBox IsChecked="{Binding Fullscreen}" Margin="46,327,638,109" Content="Fullscreen" FontSize="18" VerticalContentAlignment="Center" Checked="CheckBoxFS_Checked" Unchecked="CheckBoxFS_Unchecked" ToolTip="Starts game in full screen"></CheckBox>
+        <CheckBox IsChecked="{Binding GameWindowOnly}" Margin="46,361,549,71" Content="Game Window Only" FontSize="18" VerticalContentAlignment="Center" Checked="CheckBoxGW_Checked" Unchecked="CheckBoxGW_Unchecked" ToolTip="Launches PCSX2 without the config window"></CheckBox>
+        <CheckBox IsChecked="{Binding SkipLauncher}" Margin="46,395,507,37" Content="Skip Launcher Window" FontSize="18" VerticalContentAlignment="Center" Checked="CheckBoxSkipLauncher_Checked" Unchecked="CheckBoxSkipLauncher_Unchecked" ToolTip="Next time you open the Launcher it will directly open PCSX2 and Music GUI. You can turn this off in the config.ini file."></CheckBox>
         <tb:TaskbarIcon 
             Name="TaskbarIcon" IconSource="Images/NMCIcon.ico" ToolTipText="NMC Volume Saver" Visibility="Visible">
-            
         </tb:TaskbarIcon>
     </Grid>
 </Window>

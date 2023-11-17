@@ -10,6 +10,8 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+using IniParser;
+using IniParser.Model;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Documents;
@@ -33,24 +35,64 @@ namespace NMC_Launcher
         static extern IntPtr FindWindow(string? lpClassName, string lpWindowName);
         [DllImport("kernel32.dll")]
         private static extern IntPtr OpenProcess(int dwDesiredAccess, bool bInheritHandle, int dwProcessId);
-
         [DllImport("kernel32.dll")]
         private static extern bool ReadProcessMemory(int hProcess, int lpBaseAddress, byte[] buffer, int size, ref int lpNumberOfBytesRead);
-
         [DllImport("kernel32.dll")]
         private static extern bool WriteProcessMemory(int hProcess, int lpBaseAddress, byte[] buffer, int size, out int lpNumberOfBytesWritten);
         #endregion
 
-        bool fullscreen = false;
-        bool gameWindowOnly = false;
+        public bool Fullscreen { get; set; }
+        public bool GameWindowOnly { get; set; }
+        public bool SkipLauncher { get; set; }
+        bool Found = false;
+        bool hadVolumeIni = false;
         int volume;
         int new_volume;
-        bool Found = false;
         string version;
+
+        FileIniDataParser parser = new();
+        IniData data = new();
+
+        private void BuildConfig()
+        {
+            if (File.Exists("volume.ini"))
+            {
+                volume = int.Parse(File.ReadAllText("volume.ini"));
+                hadVolumeIni = true;
+                File.Delete("volume.ini");
+            }
+            
+            if (!File.Exists("config.ini"))
+            {
+                Fullscreen = true;
+                GameWindowOnly = true;
+                SkipLauncher = false;
+                data["Settings"]["Fullscreen"] = "True";
+                data["Settings"]["GameWindowOnly"] = "True";
+                data["Settings"]["SkipLauncher"] = "False";
+                data["Music GUI"]["Volume"] = hadVolumeIni ? volume.ToString() : "50";
+                parser.WriteFile("config.ini", data);
+            } else
+            {
+                IniData data = parser.ReadFile("config.ini");
+                Fullscreen = bool.Parse(data["Settings"]["Fullscreen"]);
+                GameWindowOnly = bool.Parse(data["Settings"]["GameWindowOnly"]);
+                SkipLauncher = bool.Parse(data["Settings"]["SkipLauncher"]);
+                volume = int.Parse(data["Music GUI"]["Volume"]);
+            }
+        }
 
         public MainWindow()
         {
+            BuildConfig();
             InitializeComponent();
+
+            DataContext = this;
+
+            if (SkipLauncher)
+            {
+                PlayButton_Click(null, null);
+            }
         }
 
         private void PlayButton_Click(object sender, RoutedEventArgs e)
@@ -60,7 +102,7 @@ namespace NMC_Launcher
 
             if (File.Exists("..\\pcsx2-v1.7.2746-windows-x86\\pcsx2x64.exe"))
             {
-                version = "Rev 5";
+                version = "Rev 5 and below";
                 ps2.StartInfo.FileName = "..\\pcsx2-v1.7.2746-windows-x86\\pcsx2x64.exe";
             }
             else if (File.Exists("..\\PCSX2 NMC Executable\\pcsx2x64.exe"))
@@ -79,11 +121,11 @@ namespace NMC_Launcher
                 MessageBox.Show("KH2FM.NEW.ISO not found. Please make sure the launcher is located in the Music Tool folder.", "KH2FM.NEW.ISO Not Found");
 
             // Check if fullscreen/game window only is checked
-            if (fullscreen)
+            if (Fullscreen)
             {
                 ps2.StartInfo.Arguments += " --fullscreen";
             }
-            if (gameWindowOnly)
+            if (GameWindowOnly)
             {
                 ps2.StartInfo.Arguments += " --nogui";
             }
@@ -130,36 +172,20 @@ namespace NMC_Launcher
 
             // Closes launcher when Music_GUI closes to assure volume was saved
             music.WaitForExit();
+
+            // Manually abort thread to workaround 0 volume bug
+            // TODO: Find a better solution
+#pragma warning disable SYSLIB0006
+            volumeSaver.Abort();
+#pragma warning restore SYSLIB0006
+
             Environment.Exit(0);
         }
-
-        private void Window_ContentRendered(object sender, EventArgs e)
-        {
-
-        }
-
-        private void CheckBoxFS_Checked(object sender, RoutedEventArgs e)
-        {
-            fullscreen = true;
-        }
-
-        private void CheckBoxFS_Unchecked(object sender, RoutedEventArgs e)
-        {
-            fullscreen = false;
-        }
-
-        private void CheckBoxGW_Checked(object sender, RoutedEventArgs e)
-        {
-            gameWindowOnly = true;
-        }
-
-        private void CheckBoxGW_Unchecked(object sender, RoutedEventArgs e)
-        {
-            gameWindowOnly = false;
-        }
-
+        
         private void Volume_Saver()
         {
+            data = parser.ReadFile("config.ini");
+
             while (!Found)
             {
                 Thread.Sleep(250);
@@ -172,7 +198,7 @@ namespace NMC_Launcher
             // Get volume
             try
             {
-                volume = int.Parse(File.ReadAllText("volume.ini"));
+                volume = int.Parse(data["Music GUI"]["Volume"]);
             }
             catch
             {
@@ -182,7 +208,8 @@ namespace NMC_Launcher
             
             // Save volume
             Memory.WriteMemory<int>(BaseAddress + 0x251010, volume);
-            File.WriteAllText("volume.ini", volume.ToString());
+            data["Music GUI"]["Volume"] = volume.ToString();
+            parser.WriteFile("config.ini", data);
 
             // If volume changed, save new volume
             bool volumeChanged = false;
@@ -200,7 +227,8 @@ namespace NMC_Launcher
                 if (new_volume != volume)
                 {
                     volume = new_volume;
-                    File.WriteAllText("volume.ini", volume.ToString());
+                    data["Music GUI"]["Volume"] = volume.ToString();
+                    parser.WriteFile("config.ini", data);
                     volumeChanged = true;
                     lastVolumeChange = DateTime.Now;
                 }
@@ -211,6 +239,57 @@ namespace NMC_Launcher
                 }
             }
         }
+
+        private void SaveConfig(string section, string key, string value)
+        {
+            data = parser.ReadFile("config.ini");
+            data[section][key] = value;
+            parser.WriteFile("config.ini", data);
+        }
+
+        #region WPF Methods
+        private void Window_ContentRendered(object sender, EventArgs e)
+        {
+            
+        }
+
+        private void CheckBoxFS_Checked(object sender, RoutedEventArgs e)
+        {
+            Fullscreen = true;
+            SaveConfig("Settings", "Fullscreen", "True");
+        }
+
+        private void CheckBoxFS_Unchecked(object sender, RoutedEventArgs e)
+        {
+            Fullscreen = false;
+            SaveConfig("Settings", "Fullscreen", "False");
+        }
+
+        private void CheckBoxGW_Checked(object sender, RoutedEventArgs e)
+        {
+            GameWindowOnly = true;
+            SaveConfig("Settings", "GameWindowOnly", "True");
+        }
+
+        private void CheckBoxGW_Unchecked(object sender, RoutedEventArgs e)
+        {
+            GameWindowOnly = false;
+            SaveConfig("Settings", "GameWindowOnly", "False");
+        }
+
+        private void CheckBoxSkipLauncher_Checked(object sender, RoutedEventArgs e)
+        {
+            SkipLauncher = true;
+            SaveConfig("Settings", "SkipLauncher", "True");
+            MessageBox.Show("The next time NMC Launcher is opened, PCSX2 and Music GUI will launch immedately.\n\nNote: To turn this off, you must change SkipLauncher from True to False in the config.ini file found in the Music Tool folder.", "Warning");
+        }
+
+        private void CheckBoxSkipLauncher_Unchecked(object sender, RoutedEventArgs e)
+        {
+            SkipLauncher = false;
+            SaveConfig("Settings", "SkipLauncher", "False");
+        }
+        #endregion
 
         // Credit to PuffingIn2D and C0reTheAlpaca for the Memory class
         internal class Memory
